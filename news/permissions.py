@@ -19,11 +19,11 @@ class IsAuthorPermission(BasePermission):
             return False
 
 
-class CommentPermission(BasePermission):
+class IsAdminPermission(BasePermission):
     def has_permission(self, request, view):
         if request.method in SAFE_METHODS:
             return True
-        if request.user.is_authenticated:
+        if request.user.is_authenticated and request.user.is_staff:
             return True
         else:
             return False
@@ -31,7 +31,7 @@ class CommentPermission(BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.method in SAFE_METHODS:
             return True
-        if request.user.is_authenticated and request.user == obj.user:
+        if request.user.is_authenticated and request.user.is_staff:
             return True
         else:
             return False
