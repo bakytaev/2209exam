@@ -50,7 +50,6 @@ class CommentListCreateAPIView(ListCreateAPIView):
     permission_classes = [IsAuthorPermission, ]
 
     def get_queryset(self):
-        print(self.kwargs)
         return self.queryset.filter(news_id=self.kwargs['news_id'])
 
     def perform_create(self, serializer):
@@ -68,6 +67,7 @@ class CommentRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
 
     def get_object(self):
         obj = get_object_or_404(self.queryset, id=self.kwargs['id'])
+        self.check_object_permissions(self.request, obj)
         return obj
 
 
@@ -79,13 +79,16 @@ class StatusViewSet(ModelViewSet):
 
 
 class PostNewsStatus(APIView):
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    permission_classes = [IsAuthorPermission, ]
+
     def get(self, request, news_id, slug):
         news = get_object_or_404(News, id=news_id)
         this_status = get_object_or_404(Status, slug=slug)
         try:
-            like_dislike = NewsStatus.objects.create(news=news, user=request.user.author, status=this_status)
+            like_dislike = NewsStatus.objects.create(news=news, author=request.user.author, status=this_status)
         except IntegrityError:
-            like_dislike = NewsStatus.objects.get(news=news, user=request.user.author)
+            like_dislike = NewsStatus.objects.get(news=news, author=request.user.author)
             if like_dislike.status == this_status:
                 like_dislike.status = None
                 data = {'delete': f'{request.user.username} deleted status of the news {news_id}'}
@@ -100,6 +103,9 @@ class PostNewsStatus(APIView):
 
 
 class PostCommentStatus(APIView):
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    permission_classes = [IsAuthorPermission, ]
+
     def get(self, request, news_id, comment_id, slug):
         news = get_object_or_404(News, id=news_id)
         comment = get_object_or_404(Comment, id=comment_id)
